@@ -1,94 +1,136 @@
-import "package:flutter/material.dart";
+import 'package:flutter/material.dart';
 
-void main() => runApp(MaterialApp(home: MyHomePage(),));
+class Todo {
+  final String title;
+  final String description;
 
-class MyHomePage extends StatefulWidget
-{
-  @override
-  _MyHomePageState createState() => _MyHomePageState();
+  const Todo (this.title, this.description);
 }
 
-class _MyHomePageState extends State<MyHomePage>
+List <Todo> _todos = [
+  Todo('Task One', 'Take out the trash!'),
+  Todo('Task Two', 'Paint the house!')
+];
+
+void main () => runApp(
+  MaterialApp(
+    title: 'Home Screen',
+    home: TodosScreen(todos: _todos),
+  )
+);
+
+class TodosScreen extends StatefulWidget
 {
-  // INITIAL VARIABLE (empty list)
-  List <String> _todos = ['task1', 'task2', 'task3', "task4", 'task5'];
+  const TodosScreen({Key? key, required this.todos}) : super(key: key);
 
-  // Dialog Box Pop-up
-// Text input --> add to the _todos
-  void _addTodo()
-  {
-    showDialog(
-      context: context,
-      builder: (BuildContext context)
-      {
-        String newTodo = '';
+  final List <Todo> todos;
 
-        return AlertDialog(
-          title: Text('Enter New Task Below: '),
-          content: TextField(
-            onChanged: (value)
-            {
-              newTodo = value;
-            }
-          ),
-          actions: <Widget> [
-            TextButton(
-              child: Text('Cancel'),
-              onPressed: (){
-                Navigator.of(context).pop();
-              }
-              ),
-              TextButton(
-                onPressed: (){
-                  _todos.add(newTodo);
-                  Navigator.of(context).pop();
-                }, 
-                child: Text('Submit')
-                )
-          ],
-        );
-     }
-    );
-  }
+  @override
+  _TodosScreenState createState() => _TodosScreenState ();
 
-@override
+}
+
+class _TodosScreenState extends State <TodosScreen> {
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("To Do List"),
-      backgroundColor: Colors.amber[500],
+      appBar: AppBar(
+        title: Text("My Tasks"),
+        backgroundColor: Colors.amber[100],
       ),
       body: ListView.builder(
-        itemCount: _todos.length,
-        itemBuilder: (context, index){
-          final todo = _todos[index];
+          itemBuilder: (context, index)
+          {
+            return ListTile(
+              title: Text(_todos[index].title),
+              onTap: (){
+                Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => DetailScreen(todo: _todos[index]))
+                );
+              },
+            );
+          },
+          itemCount: _todos.length,
+          ),
+          floatingActionButton: FloatingActionButton(
+            onPressed: () async {
+              final Todo? newTodo = await showDialog <Todo>
+              (
+                context: context,
+                builder: (BuildContext context) {
+                  String? title;
+                  String? description;
 
-          return ListTile(
-            title: Text(todo,
-            style: TextStyle(
-              decoration: todo.startsWith('-')
-              ? TextDecoration.lineThrough
-              : TextDecoration.none
-            ),
-            ),
-            onTap: (){
-              setState(() {
-                // _todos.removeAt(index);
-                if (todo.startsWith('-'))
-                {
-                  _todos[index] = todo.substring(2);
-                }
-                else
-                {
-                  _todos[index] = '- $todo';
-                }
+                  return AlertDialog(
+                    title: const Text('Create new Task!'),
+                    content: Column(
+                      children: <Widget> [
+                        TextField(
+                          onChanged: (value) => title = value,
+                          decoration: const InputDecoration(
+                            labelText: 'Title'
+                          ),
+                        ),
+                        TextField(
+                          onChanged: (value) => description = value,
+                          decoration: const InputDecoration(labelText: 'Description'),
+                        )
+                      ],
+                      ),
+                      actions: <Widget>[
+                        TextButton(
+                          onPressed: () {
+                             Navigator.pop(context);
+                          }, 
+                        child: const Text('Cancel')
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            if (title != null && description != null)
+                            {
+                              Navigator.pop(
+                                context, Todo(title!, description!)
+                              );
+                            }
+                          }, 
+                          child: const Text('Save')
+                        ),
+                      ],
+                  );
               });
+              
+              if (newTodo != null)
+              {
+                setState(() {
+                  _todos.add(newTodo);
+                });
+              }
+
             },
-          );
-        }),
-         floatingActionButton: FloatingActionButton(
-            child: Icon(Icons.add),
-            onPressed: _addTodo
-            )
+            child: const Icon(Icons.add),
+            ),
         );
+  }
+}
+
+class DetailScreen extends StatelessWidget
+{
+  const DetailScreen({Key? key, required this.todo}) : super(key: key);
+
+  final Todo todo;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(todo.title),
+        backgroundColor: Colors.blue[100],
+      ),
+      body: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Text(todo.description),
+        ),
+    );
   }
 }
